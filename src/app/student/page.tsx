@@ -28,7 +28,7 @@ export default function StudentDashboard() {
             {/* Welcome Section */}
             <div className="mb-8">
               <h1 className="text-4xl font-bold text-gray-900 mb-2">Welcome Back, Alex!</h1>
-              <p className="text-gray-600">Keep learning and progress towards your goals[cite: 16, 21].</p>
+              <p className="text-gray-600">Keep learning and progress towards your goals.</p>
             </div>
 
             {/* Learning Stats */}
