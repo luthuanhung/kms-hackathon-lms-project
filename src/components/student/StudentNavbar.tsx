@@ -1,9 +1,32 @@
 'use client';
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { Bell, MessageSquare, Settings, LogOut, Search } from 'lucide-react';
 
 export default function StudentNavbar() {
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    try {
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+      });
+
+      if (response.ok) {
+        // Redirect to the login page (or home page)
+        router.push('/student'); 
+        
+        // Refresh the router to ensure client-side state is cleared
+        router.refresh(); 
+      } else {
+        console.error('Failed to log out');
+      }
+    } catch (error) {
+      console.error('An error occurred during logout:', error);
+    }
+  };
+
   return (
     <nav className="bg-white shadow-md p-4 flex items-center justify-between sticky top-0 z-50">
       <div className="flex items-center flex-1">
@@ -51,7 +74,10 @@ export default function StudentNavbar() {
         </div>
 
         {/* Logout */}
-        <button className="text-gray-600 hover:text-red-600 transition">
+        <button 
+          className="text-gray-600 hover:text-red-600 transition" 
+          onClick={handleLogout}
+        >
           <LogOut size={20} />
         </button>
       </div>
