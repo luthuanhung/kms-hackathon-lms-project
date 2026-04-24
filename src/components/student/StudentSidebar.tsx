@@ -42,7 +42,7 @@ export default function StudentSidebar() {
             </button>
             {expandedMenu === 'courses' && (
               <div className="ml-4 mt-2 space-y-1 border-l-2 border-gray-300 pl-4">
-                <Link href="/student/courses">
+                <Link href="/student/course">
                   <p className="px-4 py-2 text-sm text-gray-600 hover:text-blue-600 cursor-pointer">All Courses</p>
                 </Link>
                 <p className="px-4 py-2 text-sm text-gray-600 hover:text-blue-600 cursor-pointer">In Progress</p>
