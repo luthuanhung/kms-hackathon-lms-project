@@ -1,0 +1,100 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// User model with role-based inheritance
+model User {
+  id       String @id @default(uuid())
+  email    String @unique
+  password String
+  role     String @default("STUDENT") // STUDENT, TEACHER, ADMIN
+
+  profile       Profile?
+  courses       Course[] @relation("TeacherCourses")
+  enrollments   Enrollment[]
+  attemptResults AttemptResult[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Profile {
+  id     String @id @default(uuid())
+  userId String @unique
+  fullName String?
+  avatar String?
+  bio    String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Course {
+  id          String @id @default(uuid())
+  title       String
+  description String?
+  teacherId   String
+  
+  teacher     User @relation("TeacherCourses", fields: [teacherId], references: [id])
+  lessons     Lesson[]
+  enrollments Enrollment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Lesson {
+  id       String @id @default(uuid())
+  courseId String
+  title    String
+  content  String
+  order    Int @default(0)
+
+  course      Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  assessments Assessment[]
+}
+
+model Enrollment {
+  id        String @id @default(uuid())
+  userId    String
+  courseId  String
+  progress  Int @default(0)
+  
+  enrolledAt  DateTime @default(now())
+  completedAt DateTime?
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+}
+
+model Assessment {
+  id       String @id @default(uuid())
+  lessonId String
+  type     String // quiz, assignment, project
+  content  String // JSON or text
+
+  lesson        Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  attemptResults AttemptResult[]
+}
+
+model AttemptResult {
+  id          String @id @default(uuid())
+  userId      String
+  assessmentId String
+  score       Int
+  isCorrect   Boolean
+  
+  attemptedAt DateTime @default(now())
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+}
