@@ -1,10 +1,41 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { GraduationCap, Briefcase } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
+  const router = useRouter();
+  const [user, setUser] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Check if user is logged in
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        const userData = JSON.parse(storedUser);
+        setUser(userData);
+        // Redirect to appropriate dashboard
+        const dashboardUrl = userData.role === 'TEACHER' ? '/teacher' : '/student';
+        router.push(dashboardUrl);
+      } catch (error) {
+        localStorage.removeItem('user');
+        localStorage.removeItem('authToken');
+      }
+    }
+    setIsLoading(false);
+  }, [router]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-500 to-pink-500 flex items-center justify-center">
+        <div className="text-white text-2xl font-semibold">Loading...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-500 to-pink-500 flex items-center justify-center p-4">
       <div className="max-w-4xl w-full">
@@ -17,7 +48,7 @@ export default function Home() {
         {/* Role Selection Cards */}
         <div className="grid md:grid-cols-2 gap-8">
           {/* Student Role */}
-          <Link href="/student">
+          <Link href="/auth/login?role=STUDENT">
             <div className="bg-white rounded-2xl shadow-2xl p-8 hover:shadow-3xl transition transform hover:scale-105 cursor-pointer h-full">
               <div className="flex justify-center mb-6">
                 <div className="bg-blue-500 p-6 rounded-full">
@@ -53,7 +84,7 @@ export default function Home() {
           </Link>
 
           {/* Teacher Role */}
-          <Link href="/teacher">
+          <Link href="/auth/login?role=TEACHER">
             <div className="bg-white rounded-2xl shadow-2xl p-8 hover:shadow-3xl transition transform hover:scale-105 cursor-pointer h-full">
               <div className="flex justify-center mb-6">
                 <div className="bg-purple-500 p-6 rounded-full">
