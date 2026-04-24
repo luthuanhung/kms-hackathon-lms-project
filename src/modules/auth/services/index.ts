@@ -85,8 +85,21 @@ export const authService = {
   },
 
   logout: async () => {
-    // Logout logic (typically handled on client-side by removing token)
-    // Could also implement token blacklisting on server if needed
-    return { success: true, message: 'Logged out successfully' };
+    try {
+    // 1. Remove the token from client storage
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('authToken');
+      // If using user details, clear them too:
+      // localStorage.removeItem('user'); 
+    }
+
+    // 2. (Optional) Notify your backend to blacklist the token
+    // await fetch('https://your-api.com/logout', { method: 'POST' });
+
+      return { success: true, message: 'Logged out successfully' };
+    } catch (error) {
+    console.error('Logout error:', error);
+    return { success: false, message: 'Failed to log out' };
+  }
   },
 };

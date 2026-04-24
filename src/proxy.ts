@@ -8,7 +8,9 @@ const PUBLIC_PAGES = ['/', '/auth/login', '/api/auth/login', '/api/auth/register
 // Các trang yêu cầu đăng nhập
 const PROTECTED_PAGES = ['/student', '/teacher', '/courses', '/progress', '/profile', '/explore', '/downloads'];
 
-export function middleware(request: NextRequest) {
+// SỬA TẠI ĐÂY: Thay "export function middleware" thành "export default function proxy" 
+// (hoặc "export function proxy")
+export default function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   
   // Lấy token từ cookie hoặc header
@@ -18,10 +20,15 @@ export function middleware(request: NextRequest) {
   // Kiểm tra token có hợp lệ không
   const isAuthenticated = token ? verifyToken(token) : null;
 
-  // Nếu trang là công khai, cho phép truy cập
-  if (PUBLIC_PAGES.some(page => pathname === page || pathname.startsWith(page))) {
+  // Kiểm tra trang public chặt chẽ hơn
+  const isPublicPage = PUBLIC_PAGES.some(page => {
+    if (page === '/') return pathname === '/'; 
+    return pathname === page || pathname.startsWith(`${page}/`); 
+  });
+
+  if (isPublicPage) {
     // Nếu đã đăng nhập và truy cập trang login, chuyển hướng về dashboard
-    if (isAuthenticated && pathname === '/auth/login') {
+    if (isAuthenticated && pathname.startsWith('/auth/login')) {
       return NextResponse.redirect(new URL('/student', request.url));
     }
     return NextResponse.next();
@@ -48,7 +55,7 @@ export function middleware(request: NextRequest) {
   if (PROTECTED_PAGES.some(page => pathname.startsWith(page))) {
     if (!isAuthenticated) {
       const loginUrl = new URL('/auth/login', request.url);
-      loginUrl.searchParams.set('redirect', pathname);
+      loginUrl.searchParams.set('redirect', pathname); // Lưu lại trang cũ để redirect về sau khi login
       return NextResponse.redirect(loginUrl);
     }
   }
