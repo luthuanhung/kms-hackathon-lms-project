@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { Save, Eye, PlusCircle, AlertCircle, BrainCircuit } from "lucide-react";
-import OrderingWidget from "./"; // Giả sử ông đã có component này
+import OrderingWidget from "@/components/questions/OderingWidget";
 
 export default function QuizBuilderPage() {
   // State quản lý cấu hình chung của câu hỏi
