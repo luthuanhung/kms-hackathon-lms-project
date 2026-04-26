@@ -1,84 +1,98 @@
-# LMS Project for KMS Hackathon - AI Vibe Coding Context
+// ...existing code...
+# AI Education LMS — KMS Hackathon
 
-This document provides a comprehensive overview of the `kms-hackathon-lms-project`, a Learning Management System (LMS) designed for the KMS Hackathon. Use this document as the primary context for any AI-assisted "vibe coding" or development tasks.
+Một LMS demo hướng tới trải nghiệm "Anti-Brainrot" (rèn luyện nhận thức) cho hai vai trò chính: Student và Teacher. Dự án sử dụng Next.js (App Router), TypeScript và Tailwind CSS, được tổ chức theo kiến trúc modular monolith (services / models / components).
 
-## 1. Project Overview
-This is a modern Learning Management System built with a focus on two primary user roles: **Students** and **Teachers**. The application is structured to provide role-specific dashboards, course exploration, progress tracking, course management features, and a specialized **Anti-Brainrot Quiz System**.
+## Mục lục
+- [Tổng quan](#tổng-quan)
+- [Chạy dự án](#chạy-dự-án)
+- [Kiến trúc & thư mục chính](#kiến-trúc--thư-mục-chính)
+- [Các thành phần quan trọng](#các-thành-phan-quan-trọng)
+- [API & AI hooks](#api--ai-hooks)
+- [Database / Prisma](#database--prisma)
+- [Góp ý & phát triển](#góp-ý--phát-triển)
+- [Tài liệu nội bộ (Vibe Coding)](#tài-liệu-nội-bộ-vibe-coding)
 
-## 2. Tech Stack
-- **Framework:** [Next.js](https://nextjs.org/) (Version 16.2.4, App Router)
-- **UI Library:** [React](https://react.dev/) (Version 19.2.4) + React Compiler
-- **Language:** TypeScript
-- **Styling:** Tailwind CSS v4 + PostCSS
-- **Icons:** `lucide-react`
-- **Linting & Formatting:** ESLint
-- **Drag & Drop:** `@hello-pangea/dnd` (recommended for Ordering/Matching questions)
+## Tổng quan
+Ứng dụng cung cấp:
+- Dashboard cho Student và Teacher.
+- Hệ thống câu hỏi tương tác: Ordering, Matching, Multiple Choice, Error Hunt.
+- Trò chuyện hướng dẫn dạng Socratic AI để hỗ trợ học tập.
+- Theo dõi "confidence" và "time_spent" cho mỗi câu hỏi (Anti-Brainrot).
 
-## 3. Architecture & Directory Structure
-The project follows the Next.js App Router architecture, with source code primarily located in the `src/` directory.
+## Chạy dự án (local)
+1. Cài đặt dependencies:
+```sh
+npm install
+```
+2. Tạo file `.env` (tham khảo `.env` trong repo) và đặt các biến cần thiết như `JWT_SECRET`, `GEMINI_API_KEY`, v.v.
+3. Migrate & generate Prisma client (nếu cần):
+```sh
+npx prisma migrate dev
+```
+4. Chạy dev server:
+```sh
+npm run dev
+```
+5. Mở http://localhost:3000
 
-### Key Directories
-- `src/app/`: Contains the route definitions and page components.
-- `src/components/`: Contains reusable UI components, logically grouped by role and shared usage.
+Tham khảo [package.json](package.json) để xem scripts.
 
-### Routing Map (`src/app/`)
-- `/` (`page.tsx`): The main landing page.
-- `/explore`: Page for users to browse and search for available courses.
-- `/courses/[id]`: Dynamic route for viewing individual course details and content.
-- `/profile`: User profile management.
-- `/progress`: Tracking page for student learning progress.
-- `/student`: The dedicated **Student Dashboard**.
-- `/teacher`: The dedicated **Teacher Dashboard**.
-- `/quiz/[quiz_id]` **(NEW)**: The interactive exam interface for students.
-- `/teacher/quiz-builder` **(NEW)**: Interface for teachers to create interactive questions.
+## Kiến trúc & thư mục chính
+- src/app — route pages (App Router). Ví dụ: [src/app/page.tsx](src/app/page.tsx), [src/app/student/page.tsx](src/app/student/page.tsx), [src/app/teacher/page.tsx](src/app/teacher/page.tsx).
+- src/components — UI components chung và theo vai trò (Student / Teacher). Ví dụ: [`TeacherSidebar`](src/components/Sidebar.tsx), [`Navbar`](src/components/Navbar.tsx).
+- src/components/student — Student-specific components (ví dụ [`SocraticChat`](src/components/student/SocraticChat.tsx)).
+- src/components/questions — Các widget câu hỏi: [`MultipleChoiceWidget`](src/components/questions/MultipleChoiceWidget.tsx), [`OrderingWidget`](src/components/questions/OderingWidget.tsx), [`MatchingWidget`](src/components/questions/MatchingWidget.tsx) và slider tự tin [`ConfidenceSlider`](src/components/questions/ConfidenceSlider.tsx).
+- src/modules — business logic / services / models (module exports tại [src/modules/index.ts](src/modules/index.ts)).
+- src/app/api — API routes ví dụ: AI endpoint [`/api/ai`](src/app/api/ai/route.ts).
+- prisma — Prisma schema & migrations (xem [prisma/schema.prisma](prisma/schema.prisma) và thư mục [prisma/migrations](prisma/migrations)).
 
-### Component Hierarchy (`src/components/`)
-Components are divided into Shared, Student-specific, Teacher-specific, and the new **Questions** module.
+## Các thành phần quan trọng (nhanh)
+- UI & pages:
+  - [src/app/page.tsx](src/app/page.tsx) — landing
+  - [src/app/student/page.tsx](src/app/student/page.tsx) — student dashboard
+  - [src/app/teacher/page.tsx](src/app/teacher/page.tsx) — teacher dashboard
+  - [src/app/teacher/quiz-builder/page.tsx](src/app/teacher/quiz-builder/page.tsx) — quiz builder UI
+- Components:
+  - [`SocraticChat`](src/components/student/SocraticChat.tsx) — chatbot Socratic (gửi request tới `/api/ai`).
+  - [`MarkdownRenderer`](src/components/MarkdownRenderer.tsx) — render markdown + hỗ trợ Mermaid ([src/components/MermaidRenderer.tsx](src/components/MermaidRenderer.tsx)).
+  - [`TeacherSidebar`](src/components/Sidebar.tsx) và [`StudentSidebar`](src/components/student/StudentSidebar.tsx).
+  - Question widgets:
+    - [`MultipleChoiceWidget`](src/components/questions/MultipleChoiceWidget.tsx)
+    - [`OrderingWidget`](src/components/questions/OderingWidget.tsx) (drag & drop bằng `@hello-pangea/dnd`)
+    - [`MatchingWidget`](src/components/questions/MatchingWidget.tsx)
+    - [`ConfidenceSlider`](src/components/questions/ConfidenceSlider.tsx)
 
-#### 1. Shared Components
-- `CourseCard.tsx`, `Navbar.tsx`, `Sidebar.tsx`
+- Backend / services / models:
+  - Export tổng quan services / models: [src/modules/index.ts](src/modules/index.ts)
+  - Một số API / services tiện dụng:
+    - [`enrollmentService.enrollStudent`](src/modules/enrollments/services/index.ts)
+    - [`profileModel.findById`](src/modules/common/models/index.ts)
+    - [`authService`](src/modules/index.ts) (xem export trong [src/modules/index.ts](src/modules/index.ts))
 
-#### 2. Student Components (`src/components/student/`)
-- `StudentNavbar.tsx`, `StudentSidebar.tsx`, `StudentCourseCard.tsx`
+## API & AI hooks
+- AI demo endpoint: [src/app/api/ai/route.ts](src/app/api/ai/route.ts) — chứa logic trả về các hardcoded demo responses và fallback call tới API (sử dụng biến môi trường `GEMINI_API_KEY`).
+- Socratic flow: client gửi body gồm { prompt, role, image, history, context } tới `/api/ai` (tham khảo [`SocraticChat`](src/components/student/SocraticChat.tsx)).
 
-#### 3. Teacher Components (`src/components/teacher/`)
-- `TeacherNavbar.tsx`, `TeacherSidebar.tsx`, `TeacherCourseCard.tsx`
+## Database / Prisma
+- Schema chính trong: [prisma/schema.prisma](prisma/schema.prisma)
+- Migrations có trong: [prisma/migrations](prisma/migrations)
+- Prisma client usage qua `prisma` import trong models (ví dụ: [src/modules/common/models/index.ts](src/modules/common/models/index.ts) chứa [`profileModel`](src/modules/common/models/index.ts)).
 
-#### 4. Question Module Components (`src/components/questions/`) - **NEW**
-- `QuestionRenderer.tsx`: The main wrapper that reads the `type` of question and dynamically loads the correct component below.
-- `ErrorHuntWidget.tsx`: Component for "Spot the Error" questions (renders code/text with selectable lines).
-- `OrderingWidget.tsx`: Component for "Sequencing" questions (drag and drop to reorder).
-- `MatchingWidget.tsx`: Component for "Concept Matching" questions.
-- `ConfidenceSlider.tsx`: The slider (0-100%) that students must fill out before submitting any answer.
+## Góp ý & phát triển nhanh
+- Thiết kế câu hỏi phải tuân theo "Anti-Brainrot": mọi widget gửi object { answer, confidence_score, time_spent } về handler cha — xem ví dụ trong [src/components/questions/MultipleChoiceWidget.tsx](src/components/questions/MultipleChoiceWidget.tsx) và [AI_VIBE_CODING.md](AI_VIBE_CODING.md).
+- Khi mở rộng AI, chỉnh sửa [src/app/api/ai/route.ts](src/app/api/ai/route.ts) — hiện có block hardcoded demo để phục vụ UX nhanh.
+- Các thay đổi frontend tương tác cần giữ client components (`"use client"`) cho khu vực drag/drop, chat, form builder.
 
-## 4. Key Features to Implement / Vibe Coding Focus Areas
+## Tài liệu nội bộ (Vibe Coding)
+Các chỉ dẫn và quy ước cụ thể cho module Quiz / Question nằm trong:
+- [AI_VIBE_CODING.md](AI_VIBE_CODING.md) — quy tắc "vibe coding", Anti-Brainrot, và các hướng dẫn dựng Question components.
+- README này tham chiếu file cấu hình & scripts: [package.json](package.json), [tsconfig.json](tsconfig.json).
 
-1.  **Role-Based Access Control (RBAC):** UI adapts based on `Student` vs `Teacher`.
-2.  **Responsive Design:** Use Tailwind CSS for mobile/tablet/desktop.
-3.  **Next.js Best Practices:** RSC for data fetching, Client Components for interactivity.
+## Liên hệ / đóng góp
+- Muốn thêm feature: fork repo → tạo branch → PR kèm description & demo.
+- Trước khi PR cho phần Quiz/AI, đọc kỹ [AI_VIBE_CODING.md](AI_VIBE_CODING.md) để tuân thủ logic “confidence + time_spent” và hooks Socratic.
 
-## 5. 🤖 Vibe Coding Instructions for the AI Assistant
+---
 
-**Dear AI Assistant (Cursor/Copilot), when requested to build features for the Quiz/Question module, strictly adhere to the following logic:**
-
-### 5.1. The "Anti-Brainrot" Core Logic
-- **No standard Textareas:** Do not generate standard essay/text-input questions.
-- **Confidence Tracking:** Every question component MUST include a `ConfidenceSlider.tsx` before the submit button. State must capture `{ answer, confidence_score, time_spent }`.
-- **Time Tracking:** Start a timer when the component mounts. Record `time_spent` on submit.
-
-### 5.2. Implementing Question Types (`src/components/questions/`)
-- **ERROR_HUNT:**
-  - Input props: A string of text or code split by lines, and the `correct_error_line_index`.
-  - UI: Render lines as clickable blocks. Highlight the selected block.
-  - Action: User clicks the line they think contains the error.
-- **ORDERING:**
-  - Input props: An array of scrambled items.
-  - UI: Use a drag-and-drop library (e.g., `@hello-pangea/dnd` or native HTML5 DnD).
-  - Action: User drags items into the correct chronological order.
-- **MATCHING:**
-  - Input props: Two arrays (Premises and Responses).
-  - UI: Two columns. User draws lines or selects pairs. 
-
-### 5.3. System Prompts & AI Hooks
-- Leave placeholder API calls for the "Socratic AI Engine" (e.g., `fetch('/api/ask-socratic')`) that trigger when a student submits an answer with high `confidence_score` but the answer is `is_correct: false`.
-- Ensure all teacher forms in `/teacher/quiz-builder` include a field for `solution_hint` so teachers can provide the context the AI needs to generate Socratic questions.
+Phiên bản hiện tại là bản demo nội bộ cho hackathon — nhớ đổi secrets trong `.env` trước khi deploy (tham khảo [package.json](package.json) để biết scripts). Chúc bạn phát triển nhanh và giữ đúng tinh thần "Anti-Brainrot" khi thêm các dạng câu hỏi mới!
