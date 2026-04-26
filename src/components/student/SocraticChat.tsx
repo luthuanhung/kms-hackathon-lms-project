@@ -1,14 +1,21 @@
 'use client';
 
+
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageSquare, Send, X, Minimize2, Sparkles, Loader2, Image as ImageIcon } from 'lucide-react';
-import MarkdownRenderer from '@/components/MarkdownRenderer'; // Ensure this path is correct
+import MarkdownRenderer from '@/components/MarkdownRenderer';
+
 
 interface Message {
   role: 'user' | 'ai';
   text: string;
-  image?: string; 
+  image?: string;
 }
+
+
+// Minimal Change: Added sleep helper for loading simulation
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 
 export default function SocraticChat({ pageContext }: { pageContext?: string }) {
   const [autoContext, setAutoContext] = useState("");
@@ -19,11 +26,11 @@ export default function SocraticChat({ pageContext }: { pageContext?: string }) 
     { role: 'ai', text: "Hi Alex! I'm your Socratic guide. Upload a screenshot or ask a question, and let's work through it together!" }
   ]);
   const [isLoading, setIsLoading] = useState(false);
-  
+ 
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // 1. Dynamic Page Scraper
+
   useEffect(() => {
     const updateContext = () => {
       const path = window.location.pathname;
@@ -36,10 +43,11 @@ export default function SocraticChat({ pageContext }: { pageContext?: string }) 
     updateContext();
   }, []);
 
-  // 2. Auto-scroll
+
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages, isLoading]);
+
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -50,40 +58,55 @@ export default function SocraticChat({ pageContext }: { pageContext?: string }) 
     }
   };
 
+
   const handleSend = async () => {
     if ((!input.trim() && !selectedImage) || isLoading) return;
 
+
     const userMsg = input;
     const userImg = selectedImage;
-    // FIX: Define combinedContext inside handleSend
     const combinedContext = `${autoContext} | Manual Context: ${pageContext || "N/A"}`;
-    
-    // Convert current messages to history format for Gemini
+   
     const historyToSend = messages.map(m => ({
-      role: m.role === 'ai' ? 'model' : 'user', // Gemini uses 'model'
+      role: m.role === 'ai' ? 'model' : 'user',
       text: m.text
     }));
 
-    // Update UI immediately
+
     setMessages(prev => [...prev, { role: 'user', text: userMsg, image: userImg || undefined }]);
     setInput('');
     setSelectedImage(null);
     setIsLoading(true);
 
+
     try {
+      // Minimal Change: Added start time capture
+      const startTime = Date.now();
+
+
       const response = await fetch('/api/ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           prompt: userMsg,
-          history: historyToSend, 
+          history: historyToSend,
           role: 'STUDENT',
           context: combinedContext,
-          image: userImg 
+          image: userImg
         }),
       });
 
+
       const data = await response.json();
+
+
+      // Minimal Change: Simulated waiting logic (1.5 seconds)
+      const elapsed = Date.now() - startTime;
+      if (elapsed < 3000) {
+        await sleep(3000 - elapsed);
+      }
+
+
       if (data.text) {
         setMessages(prev => [...prev, { role: 'ai', text: data.text }]);
       }
@@ -93,6 +116,7 @@ export default function SocraticChat({ pageContext }: { pageContext?: string }) 
       setIsLoading(false);
     }
   };
+
 
   return (
     <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
@@ -107,6 +131,7 @@ export default function SocraticChat({ pageContext }: { pageContext?: string }) 
               <Minimize2 size={18} />
             </button>
           </div>
+
 
           <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
             {messages.map((msg, i) => (
@@ -130,6 +155,7 @@ export default function SocraticChat({ pageContext }: { pageContext?: string }) 
             )}
           </div>
 
+
           {selectedImage && (
             <div className="px-4 py-2 bg-blue-50 border-t flex items-center justify-between">
               <div className="flex items-center space-x-2">
@@ -140,9 +166,10 @@ export default function SocraticChat({ pageContext }: { pageContext?: string }) 
             </div>
           )}
 
+
           <div className="p-4 bg-white border-t">
             <div className="flex items-center space-x-2">
-              <button 
+              <button
                 onClick={() => fileInputRef.current?.click()}
                 className="text-gray-400 hover:text-blue-600 transition"
                 title="Upload image"
@@ -158,7 +185,7 @@ export default function SocraticChat({ pageContext }: { pageContext?: string }) 
                 placeholder="Ask for a hint..."
                 className="flex-1 bg-gray-100 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-blue-500 outline-none text-gray-700 placeholder:text-gray-400"
               />
-              <button 
+              <button
                 onClick={handleSend}
                 disabled={isLoading}
                 className="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-all shadow-md active:shadow-none"
@@ -169,6 +196,7 @@ export default function SocraticChat({ pageContext }: { pageContext?: string }) 
           </div>
         </div>
       )}
+
 
       <button
         onClick={() => setIsOpen(!isOpen)}
