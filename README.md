@@ -139,5 +139,3 @@ See [package.json](package.json) for available scripts.
 - [package.json](package.json), [tsconfig.json](tsconfig.json) — Scripts and config.
 
 ---
-
-**Note:** This is an internal hackathon demo. Change secrets in `.env` before deploying. See [package.json](package.json) for scripts. Keep the "Anti-Brainrot" spirit when adding new question types!
