@@ -1,98 +1,143 @@
-// ...existing code...
 # AI Education LMS — KMS Hackathon
 
-Một LMS demo hướng tới trải nghiệm "Anti-Brainrot" (rèn luyện nhận thức) cho hai vai trò chính: Student và Teacher. Dự án sử dụng Next.js (App Router), TypeScript và Tailwind CSS, được tổ chức theo kiến trúc modular monolith (services / models / components).
-
-## Mục lục
-- [Tổng quan](#tổng-quan)
-- [Chạy dự án](#chạy-dự-án)
-- [Kiến trúc & thư mục chính](#kiến-trúc--thư-mục-chính)
-- [Các thành phần quan trọng](#các-thành-phan-quan-trọng)
-- [API & AI hooks](#api--ai-hooks)
-- [Database / Prisma](#database--prisma)
-- [Góp ý & phát triển](#góp-ý--phát-triển)
-- [Tài liệu nội bộ (Vibe Coding)](#tài-liệu-nội-bộ-vibe-coding)
-
-## Tổng quan
-Ứng dụng cung cấp:
-- Dashboard cho Student và Teacher.
-- Hệ thống câu hỏi tương tác: Ordering, Matching, Multiple Choice, Error Hunt.
-- Trò chuyện hướng dẫn dạng Socratic AI để hỗ trợ học tập.
-- Theo dõi "confidence" và "time_spent" cho mỗi câu hỏi (Anti-Brainrot).
-
-## Chạy dự án (local)
-1. Cài đặt dependencies:
-```sh
-npm install
-```
-2. Tạo file `.env` (tham khảo `.env` trong repo) và đặt các biến cần thiết như `JWT_SECRET`, `GEMINI_API_KEY`, v.v.
-3. Migrate & generate Prisma client (nếu cần):
-```sh
-npx prisma migrate dev
-```
-4. Chạy dev server:
-```sh
-npm run dev
-```
-5. Mở http://localhost:3000
-
-Tham khảo [package.json](package.json) để xem scripts.
-
-## Kiến trúc & thư mục chính
-- src/app — route pages (App Router). Ví dụ: [src/app/page.tsx](src/app/page.tsx), [src/app/student/page.tsx](src/app/student/page.tsx), [src/app/teacher/page.tsx](src/app/teacher/page.tsx).
-- src/components — UI components chung và theo vai trò (Student / Teacher). Ví dụ: [`TeacherSidebar`](src/components/Sidebar.tsx), [`Navbar`](src/components/Navbar.tsx).
-- src/components/student — Student-specific components (ví dụ [`SocraticChat`](src/components/student/SocraticChat.tsx)).
-- src/components/questions — Các widget câu hỏi: [`MultipleChoiceWidget`](src/components/questions/MultipleChoiceWidget.tsx), [`OrderingWidget`](src/components/questions/OderingWidget.tsx), [`MatchingWidget`](src/components/questions/MatchingWidget.tsx) và slider tự tin [`ConfidenceSlider`](src/components/questions/ConfidenceSlider.tsx).
-- src/modules — business logic / services / models (module exports tại [src/modules/index.ts](src/modules/index.ts)).
-- src/app/api — API routes ví dụ: AI endpoint [`/api/ai`](src/app/api/ai/route.ts).
-- prisma — Prisma schema & migrations (xem [prisma/schema.prisma](prisma/schema.prisma) và thư mục [prisma/migrations](prisma/migrations)).
-
-## Các thành phần quan trọng (nhanh)
-- UI & pages:
-  - [src/app/page.tsx](src/app/page.tsx) — landing
-  - [src/app/student/page.tsx](src/app/student/page.tsx) — student dashboard
-  - [src/app/teacher/page.tsx](src/app/teacher/page.tsx) — teacher dashboard
-  - [src/app/teacher/quiz-builder/page.tsx](src/app/teacher/quiz-builder/page.tsx) — quiz builder UI
-- Components:
-  - [`SocraticChat`](src/components/student/SocraticChat.tsx) — chatbot Socratic (gửi request tới `/api/ai`).
-  - [`MarkdownRenderer`](src/components/MarkdownRenderer.tsx) — render markdown + hỗ trợ Mermaid ([src/components/MermaidRenderer.tsx](src/components/MermaidRenderer.tsx)).
-  - [`TeacherSidebar`](src/components/Sidebar.tsx) và [`StudentSidebar`](src/components/student/StudentSidebar.tsx).
-  - Question widgets:
-    - [`MultipleChoiceWidget`](src/components/questions/MultipleChoiceWidget.tsx)
-    - [`OrderingWidget`](src/components/questions/OderingWidget.tsx) (drag & drop bằng `@hello-pangea/dnd`)
-    - [`MatchingWidget`](src/components/questions/MatchingWidget.tsx)
-    - [`ConfidenceSlider`](src/components/questions/ConfidenceSlider.tsx)
-
-- Backend / services / models:
-  - Export tổng quan services / models: [src/modules/index.ts](src/modules/index.ts)
-  - Một số API / services tiện dụng:
-    - [`enrollmentService.enrollStudent`](src/modules/enrollments/services/index.ts)
-    - [`profileModel.findById`](src/modules/common/models/index.ts)
-    - [`authService`](src/modules/index.ts) (xem export trong [src/modules/index.ts](src/modules/index.ts))
-
-## API & AI hooks
-- AI demo endpoint: [src/app/api/ai/route.ts](src/app/api/ai/route.ts) — chứa logic trả về các hardcoded demo responses và fallback call tới API (sử dụng biến môi trường `GEMINI_API_KEY`).
-- Socratic flow: client gửi body gồm { prompt, role, image, history, context } tới `/api/ai` (tham khảo [`SocraticChat`](src/components/student/SocraticChat.tsx)).
-
-## Database / Prisma
-- Schema chính trong: [prisma/schema.prisma](prisma/schema.prisma)
-- Migrations có trong: [prisma/migrations](prisma/migrations)
-- Prisma client usage qua `prisma` import trong models (ví dụ: [src/modules/common/models/index.ts](src/modules/common/models/index.ts) chứa [`profileModel`](src/modules/common/models/index.ts)).
-
-## Góp ý & phát triển nhanh
-- Thiết kế câu hỏi phải tuân theo "Anti-Brainrot": mọi widget gửi object { answer, confidence_score, time_spent } về handler cha — xem ví dụ trong [src/components/questions/MultipleChoiceWidget.tsx](src/components/questions/MultipleChoiceWidget.tsx) và [AI_VIBE_CODING.md](AI_VIBE_CODING.md).
-- Khi mở rộng AI, chỉnh sửa [src/app/api/ai/route.ts](src/app/api/ai/route.ts) — hiện có block hardcoded demo để phục vụ UX nhanh.
-- Các thay đổi frontend tương tác cần giữ client components (`"use client"`) cho khu vực drag/drop, chat, form builder.
-
-## Tài liệu nội bộ (Vibe Coding)
-Các chỉ dẫn và quy ước cụ thể cho module Quiz / Question nằm trong:
-- [AI_VIBE_CODING.md](AI_VIBE_CODING.md) — quy tắc "vibe coding", Anti-Brainrot, và các hướng dẫn dựng Question components.
-- README này tham chiếu file cấu hình & scripts: [package.json](package.json), [tsconfig.json](tsconfig.json).
-
-## Liên hệ / đóng góp
-- Muốn thêm feature: fork repo → tạo branch → PR kèm description & demo.
-- Trước khi PR cho phần Quiz/AI, đọc kỹ [AI_VIBE_CODING.md](AI_VIBE_CODING.md) để tuân thủ logic “confidence + time_spent” và hooks Socratic.
+A modern LMS demo focused on "Anti-Brainrot" (cognitive training) for two main roles: **Student** and **Teacher**. Built with Next.js (App Router), TypeScript, Tailwind CSS, and a modular monolith architecture (services/models/components).
 
 ---
 
-Phiên bản hiện tại là bản demo nội bộ cho hackathon — nhớ đổi secrets trong `.env` trước khi deploy (tham khảo [package.json](package.json) để biết scripts). Chúc bạn phát triển nhanh và giữ đúng tinh thần "Anti-Brainrot" khi thêm các dạng câu hỏi mới!
+## Table of Contents
+
+- [Overview](#overview)
+- [Getting Started](#getting-started-local)
+- [Architecture & Folder Structure](#architecture--folder-structure)
+- [Key Components](#key-components)
+- [API & AI Hooks](#api--ai-hooks)
+- [Database / Prisma](#database--prisma)
+- [Development & Contribution](#development--contribution)
+- [Internal Docs (Vibe Coding)](#internal-docs-vibe-coding)
+
+---
+
+## Overview
+
+- Role-based dashboards for Students and Teachers.
+- Interactive question system: Ordering, Matching, Multiple Choice, Error Hunt.
+- Socratic AI chat for learning support.
+- Tracks `confidence_score` and `time_spent` for every question (Anti-Brainrot principle).
+- Modern UI/UX with Tailwind CSS and Lucide icons.
+
+---
+
+## Getting Started (Local)
+
+1. **Install dependencies:**
+   ```sh
+   npm install
+   ```
+2. **Setup environment:**
+   - Copy `.env.example` to `.env` and fill in `JWT_SECRET`, `GEMINI_API_KEY`, etc.
+3. **Migrate & generate Prisma client:**
+   ```sh
+   npx prisma migrate dev
+   ```
+4. **Start the dev server:**
+   ```sh
+   npm run dev
+   ```
+5. **Open** [http://localhost:3000](http://localhost:3000)
+
+See [package.json](package.json) for available scripts.
+
+---
+
+## Architecture & Folder Structure
+
+```
+.
+├── prisma/                  # Prisma schema & migrations
+│   ├── schema.prisma
+│   └── migrations/
+├── public/                  # Static assets
+├── src/
+│   ├── app/                 # Next.js App Router pages
+│   │   ├── api/             # API routes (e.g. [src/app/api/ai/route.ts](src/app/api/ai/route.ts))
+│   │   ├── student/         # Student dashboard, quiz, course pages
+│   │   ├── teacher/         # Teacher dashboard, quiz-builder, course management
+│   │   ├── explore/         # Course exploration
+│   │   ├── progress/        # Student progress tracking
+│   │   ├── profile/         # User profile
+│   │   └── page.tsx         # Landing page
+│   ├── components/          # Shared UI components
+│   │   ├── student/         # Student-specific components (e.g. [`SocraticChat`](src/components/student/SocraticChat.tsx))
+│   │   ├── teacher/         # Teacher-specific components
+│   │   └── questions/       # Question widgets (see below)
+│   ├── modules/             # Business logic: services & models ([src/modules/index.ts](src/modules/index.ts))
+│   ├── lib/                 # Utilities, API helpers
+│   └── proxy.ts             # Middleware/proxy logic
+├── .env                     # Environment variables
+├── package.json
+├── tsconfig.json
+└── DEV_GUIDE.md             # Internal developer guide
+```
+
+---
+
+## Key Components
+
+- **Pages:**
+  - [src/app/page.tsx](src/app/page.tsx) — Landing
+  - [src/app/student/page.tsx](src/app/student/page.tsx) — Student dashboard
+  - [src/app/teacher/page.tsx](src/app/teacher/page.tsx) — Teacher dashboard
+  - [src/app/teacher/quiz-builder/page.tsx](src/app/teacher/quiz-builder/page.tsx) — Quiz builder UI
+  - [src/app/student/quiz/[id]/page.tsx](src/app/student/quiz/[id]/page.tsx) — Student quiz interface
+
+- **Components:**
+  - [`SocraticChat`](src/components/student/SocraticChat.tsx) — Socratic AI chatbot (calls `/api/ai`)
+  - [`MarkdownRenderer`](src/components/MarkdownRenderer.tsx) — Markdown + Mermaid diagrams ([src/components/MermaidRenderer.tsx](src/components/MermaidRenderer.tsx))
+  - [`TeacherSidebar`](src/components/Sidebar.tsx), [`StudentSidebar`](src/components/student/StudentSidebar.tsx)
+  - **Question widgets** ([src/components/questions/](src/components/questions/)):
+    - [`MultipleChoiceWidget`](src/components/questions/MultipleChoiceWidget.tsx)
+    - [`OrderingWidget`](src/components/questions/OderingWidget.tsx) (drag & drop via `@hello-pangea/dnd`)
+    - [`MatchingWidget`](src/components/questions/MatchingWidget.tsx)
+    - [`ConfidenceSlider`](src/components/questions/ConfidenceSlider.tsx)
+    - [`ErrorHuntWidget`](src/components/questions/ErrorHuntWidget.tsx) (spot the error)
+
+- **Backend / Services / Models:**
+  - All services/models exported from [src/modules/index.ts](src/modules/index.ts)
+  - Example: [`enrollmentService.enrollStudent`](src/modules/enrollments/services/index.ts), [`authService`](src/modules/index.ts)
+
+---
+
+## API & AI Hooks
+
+- **AI endpoint:** [src/app/api/ai/route.ts](src/app/api/ai/route.ts) — Handles hardcoded demo responses and Gemini API fallback (`GEMINI_API_KEY` required).
+- **Socratic flow:** Client sends `{ prompt, role, image, history, context }` to `/api/ai` ([`SocraticChat`](src/components/student/SocraticChat.tsx)).
+- **Quiz/Question logic:** All question widgets must send `{ answer, confidence_score, time_spent }` to parent ([DEV_GUIDE.md](DEV_GUIDE.md)).
+
+---
+
+## Database / Prisma
+
+- **Schema:** [prisma/schema.prisma](prisma/schema.prisma)
+- **Migrations:** [prisma/migrations](prisma/migrations)
+- **Usage:** Import Prisma client in models/services (see [src/modules/common/models/index.ts](src/modules/common/models/index.ts))
+
+---
+
+## Development & Contribution
+
+- **Anti-Brainrot:** All question widgets must include a [`ConfidenceSlider`](src/components/questions/ConfidenceSlider.tsx) and track `time_spent` (see [DEV_GUIDE.md](DEV_GUIDE.md)).
+- **Extend AI:** Edit [src/app/api/ai/route.ts](src/app/api/ai/route.ts) for new Socratic logic or Gemini integration.
+- **Frontend interactivity:** Use `"use client"` for drag/drop, chat, and quiz builder components.
+- **Add features:** Fork → branch → PR with description/demo.
+- **Before PR for Quiz/AI:** Read [DEV_GUIDE.md](DEV_GUIDE.md) to follow "confidence + time_spent" and Socratic hooks.
+
+---
+
+## Internal Docs (Vibe Coding)
+
+- [DEV_GUIDE.md](DEV_GUIDE.md) — Architecture, directory structure, and "Anti-Brainrot" rules.
+- [package.json](package.json), [tsconfig.json](tsconfig.json) — Scripts and config.
+
+---
+
+**Note:** This is an internal hackathon demo. Change secrets in `.env` before deploying. See [package.json](package.json) for scripts. Keep the "Anti-Brainrot" spirit when adding new question types!
